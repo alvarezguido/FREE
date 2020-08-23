@@ -18,7 +18,7 @@ Created on Sun Aug 16 18:57:41 2020
  SYNOPSIS:
    ./confirmabletdmaTX.py <nodes> <datasize> <avgsend> <collision> <randomseed>
  DESCRIPTION:
-    nodes
+    nodes:
         number of nodes to simulate
     datasize
         Size of data that each device sends in bytes
