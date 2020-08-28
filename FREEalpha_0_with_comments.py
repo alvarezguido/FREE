@@ -18,7 +18,7 @@ Created on Sun Aug 16 18:57:41 2020
  SYNOPSIS:
    ./confirmabletdmaTX.py <nodes> <datasize> <avgsend> <collision> <randomseed>
  DESCRIPTION:
-    nodes:
+    nodes
         number of nodes to simulate
     datasize
         Size of data that each device sends in bytes
@@ -65,6 +65,13 @@ graphics = 0
 #sf12 = np.array([12,-133.25,-132.25,-132.25])
 
 ##ARRAY WITH MEASURED VALUES FOR SENSIBILITY, NEW VALUES
+##THIS VALUES CORRESPOND TO:
+#   - FIRST ELEMENT: IT'S THE SF (NOT USABLE)
+#   - SECOND ELEMENT: SENSIBILITY FOR 125KHZ BW
+#   - THIRD ELEMENT: SENSIBILITY FOR 250KHZ BW
+#   - FOURTH ELEMENT: SENSIBILITY FOR 500KHZ BW
+# NOTICE THAT SENSIBILITY DECREASE ALONG BW INCREASES, ALSO WITH LOWER SF
+
 sf7 = np.array([7,-123,-120,-117.0])
 sf8 = np.array([8,-126,-123,-120.0])
 sf9 = np.array([9,-129,-126,-123.0])
@@ -80,6 +87,7 @@ IS9 = np.array([-15,-13,1,-13,-14,-15])
 IS10 = np.array([-19,-18,-17,1,-17,-18])
 IS11 = np.array([-22,-22,-21,-20,1,-20])
 IS12 = np.array([-25,-25,-25,-24,-23,1])
+
 #THIS IS THE MATRIX OF CROSS INTERFERENCE BETWEEN SF
 IsoThresholds = np.array([IS7,IS8,IS9,IS10,IS11,IS12])
 #ASUME A BAND
@@ -715,6 +723,7 @@ env = simpy.Environment()
 
 # maximum number of packets the BS can receive at the same time
 #PERHAPS NOW WE CAN RECEIVE UNTIL 1000 WITH NEW VERSION OF LORA CHIP
+#BS is base-station, or gateway
 maxBSReceives = 8
 
 # max distance: 300m in city, 3000 m outside (5 km Utz experiment)
@@ -727,7 +736,8 @@ nrLost = 0
 nrLostError = 0
 nrNoACK = 0
 nrACKLost = 0
-
+# PTX IS TO CONTROL THE SIZE OF THE DEPLOYMENT, WHICH HAS IMPACT ON TH SF ALLOCATION
+# IF USED 14dBm, MORE THAN 25% END-DEVICES ALLOCATE SF12, WHICH IS NOT REAL DEPLOYMENT
 Ptx = 9.75
 gamma = 2.08
 d0 = 40.0
@@ -827,6 +837,8 @@ V = 3.0     # voltage XXX
 sent = sum(n.sent for n in nodes)
 energy = sum(node.packet.rectime * TX[int(node.packet.txpow)+2] * V * node.sent for node in nodes) / 1e3
 
+# GUARDS IS THE NUMBER OF GUARDS PER FRAME PER SF
+# THERE IS A GUARD TIME FOR EACH FRAME AND SF, SEE ALGORITHM 2 PAGE 7 ON PAPER
 print ("Guards: ", Guards)
 print ("energy (in J): ", energy)
 print ("sent packets: ", sent)
@@ -839,6 +851,8 @@ print ("NoACK packets: ", nrNoACK)
 print ("ACKLost packets: ", nrACKLost)
 
 # data extraction rate
+# DER IS ALSO THE SAME AS DDR (DATA DELIVERY RATIO), WHICH IS NEARLY THE SAME AS THROUGHPUT CONCEPT
+
 der1 = (sent-nrCollisions)/float(sent) if sent!=0 else 0
 print ("DER:", der1)
 der2 = (nrReceived)/float(sent) if sent!=0 else 0
@@ -856,7 +870,10 @@ nodefair2 = (sum(nodeder2)**2/(nrNodes*sum([i*float(j) for i,j in zip(nodeder2,n
 print ("============================")
 print ("SFdistribution: ", SFdistribution)
 print ("BWdistribution: ", BWdistribution)
+# CRdistribution SHOWS CODING RATE AMONG END-DEVICES WITH SAME SF AND BW.
+# IN THE SIMULATION, ALL DEVICES USES THE SAME CODING RATE (CONSTANT)
 print ("CRdistribution: ", CRdistribution)
+
 print ("TXdistribution: ", TXdistribution)
 #THIS IS HOW MANY SLOTS PER FRAME ARE DISTRIBUTED IN ALL SF
 #NOTICED THAT CORRESPONDS TO SFdistribution
@@ -864,6 +881,7 @@ print ("Slotsperframe: ", Slotsperframe)
 print ("Slotlengths: ", Slotlengths)
 print ("Framelengths: ", Framelengths)
 print ("Collmap: ", Collmap)
+# COLLECTION TIME IS EXPRESSED IN SECONDS
 print ("CollectionTime: ", env.now)
 
 # save experiment data into a dat file that can be read by e.g. gnuplot
